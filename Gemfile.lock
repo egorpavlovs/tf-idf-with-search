@@ -1,0 +1,19 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    matrix (0.1.0)
+    ruby-stemmer (0.9.6)
+    tf-idf-similarity (0.1.6)
+      unicode_utils (~> 1.4)
+    unicode_utils (1.4.0)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  matrix
+  ruby-stemmer
+  tf-idf-similarity
+
+BUNDLED WITH
+   1.16.6
