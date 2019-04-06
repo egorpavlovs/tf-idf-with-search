@@ -1,0 +1,1 @@
+https://jsonapi.org/profile_template.md
