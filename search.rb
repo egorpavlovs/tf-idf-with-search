@@ -4,36 +4,57 @@ require 'tf-idf-similarity'
 require 'lingua/stemmer'
 require 'fileutils'
 
-S_DOCS_HOME_PATH = 'stemming_docs'
-
 class Search
 
-  def self.get_result(request, count_result=nil)
-    request = request.split(" ").map{|word| Lingua.stemmer(word)}.join(" ")
-
-    all_paths = Dir["#{S_DOCS_HOME_PATH}/*/*/*"]
-    file_with_tf_idf = all_paths.map do |path|
-      [path, count_similar(request, path)]
-    end
-    puts ""
-    count_result ||= all_paths.count
-    file_with_tf_idf.sort_by(&:last).reverse.first(count_result)
+  def initialize()
+    @corpus = create_corpus()
+    # @matrix = create_matrix()
   end
 
-  def self.count_similar(request, doc)
-    print "*"
-
-    tf_document_data = TfIdfSimilarity::Document.new(File.open(doc) { |file| file.read })
-    tf_document_request = TfIdfSimilarity::Document.new(request)
-
-    corpus = [tf_document_request, tf_document_data]
-
+  def create_matrix()
+    paths = Dir['stemming_docs/*/*/']
+    corpus = paths.map {|path| TfIdfSimilarity::Document.new(File.open([path, "content.txt"].join("/"), 'r'){|f| f.read})}
     model = TfIdfSimilarity::TfIdfModel.new(corpus)
-
     matrix = model.similarity_matrix
-    matrix[model.document_index(tf_document_request), model.document_index(tf_document_data)]
+  end
+
+  def create_corpus()
+    paths = Dir['stemming_docs/*/*/']
+    @urls_hashs = []
+    corpus = paths.map do |path|
+      tf_doc = TfIdfSimilarity::Document.new(File.open([path, "content.txt"].join("/"), 'r'){|f| f.read})
+      url = File.open([path, "links.txt"].join("/"), 'r'){|f| f.read}
+      @urls_hashs << {"tf_doc"=>tf_doc, "url"=>url}
+      tf_doc
+    end
+  end
+
+
+  def get_result(search_line)
+    tf_search = TfIdfSimilarity::Document.new(search_line.downcase)
+    new_corpus = [tf_search, @corpus].flatten
+    model = TfIdfSimilarity::TfIdfModel.new(new_corpus)
+    matrix = model.similarity_matrix
+    result_hashs = @urls_hashs.map do |url_hash|
+      point = matrix[model.document_index(tf_search), model.document_index(url_hash['tf_doc'])]
+      {
+        "point" => point,
+        "url" => url_hash['url']
+      }
+    end
+    result_hashs.sort_by{|h| h['point']}.uniq {|h| h['url'] }.each do |h|
+      puts h['url']
+    end
   end
 end
 
 
-puts Search.get_result("wikipedia", 10)
+# puts Search.get_result("wikipedia", 15)
+
+search = Search.new
+puts 'Start search'
+loop do
+  puts "Enter request"
+  data = gets
+  search.get_result(data.delete("\n"))
+end
