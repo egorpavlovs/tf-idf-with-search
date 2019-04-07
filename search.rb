@@ -30,7 +30,8 @@ class Search
   end
 
 
-  def get_result(search_line)
+  def get_result(search_line, count_urls = nil)
+    count_urls ||= 3
     tf_search = TfIdfSimilarity::Document.new(search_line.downcase)
     new_corpus = [tf_search, @corpus].flatten
     model = TfIdfSimilarity::TfIdfModel.new(new_corpus)
@@ -42,7 +43,7 @@ class Search
         "url" => url_hash['url']
       }
     end
-    result_hashs.sort_by{|h| h['point']}.uniq {|h| h['url'] }.each do |h|
+    result_hashs.sort_by{|h| h['point']}.uniq {|h| h['url'] }.first(count_urls).each do |h|
       puts h['url']
     end
   end
